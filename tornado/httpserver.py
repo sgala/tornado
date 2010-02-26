@@ -367,10 +367,11 @@ class HTTPRequest(object):
             self.remote_ip = self.headers.get(
                 "X-Real-Ip", self.headers.get("X-Forwarded-For", remote_ip))
             self.protocol = self.headers.get("X-Scheme", protocol) or "http"
+            self.host = self.headers.get("X-Forwarded-Host",host) or self.headers.get("Host") or "127.0.0.1"
         else:
             self.remote_ip = remote_ip
             self.protocol = protocol or "http"
-        self.host = host or self.headers.get("Host") or "127.0.0.1"
+            self.host = host or self.headers.get("Host") or "127.0.0.1"
         self.files = files or {}
         self.connection = connection
         self._start_time = time.time()
