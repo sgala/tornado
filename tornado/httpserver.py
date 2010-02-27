@@ -138,6 +138,7 @@ class HTTPServer(object):
         ais = socket.getaddrinfo(address, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
         for ai in ais:
             s = socket.socket(*ai[:3])
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if s.family == socket.AF_INET6:
                 s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
             s.bind(ai[4])
@@ -146,7 +147,6 @@ class HTTPServer(object):
             flags = fcntl.fcntl(f, fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
             fcntl.fcntl(f, fcntl.F_SETFD, flags)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.setblocking(0)
             s.listen(128)
 
