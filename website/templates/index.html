@@ -14,12 +14,12 @@ sudo python setup.py install</code></pre>
   <p>The Tornado source code is <a href="http://github.com/facebook/tornado">hosted on GitHub</a>.</p>
 
   <h3>Prerequisites</h3>
-  <p>Tornado has been tested on Python 2.5 and 2.6. To use all of the features of Tornado, you need to have <a href="http://pycurl.sourceforge.net/">PycURL</a> and a JSON library like <a href="http://pypi.python.org/pypi/simplejson/">simplejson</a> installed. Complete installation instructions for Mac OS X and Ubuntu are included below for convenience.</p>
+  <p>Tornado has been tested on Python 2.5 and 2.6. To use all of the features of Tornado, you need to have <a href="http://pycurl.sourceforge.net/">PycURL</a>. If running under Python 2.5 you'll need a JSON library like <a href="http://pypi.python.org/pypi/simplejson/">simplejson</a> installed. Complete installation instructions for Mac OS X and Ubuntu are included below for convenience.</p>
   <p style="font-weight:bold">Mac OS X 10.5/10.6</p>
   <pre><code>sudo easy_install setuptools pycurl==7.16.2.1 simplejson</code></pre>
 
   <p style="font-weight:bold">Ubuntu Linux</p>
-  <pre><code>sudo apt-get install python-dev python-pycurl python-simplejson</code></pre>
+  <pre><code>sudo apt-get install python-dev python-pycurl #also python-simplejson if using Python 2.5</code></pre>
 
   <h2>Hello, world</h2>
   <p>Here is the canonical &quot;Hello, world&quot; example app for Tornado:</p>
