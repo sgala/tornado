@@ -184,7 +184,7 @@ class HTTPServer(object):
                 if os.fork() == 0:
                     self.io_loop = ioloop.IOLoop.instance()
                     for f in self._socket:
-                        self.ioloop..add_handler(
+                        self.io_loop.add_handler(
                             f, self._handle_events,
                             ioloop.IOLoop.READ)
                     return
@@ -197,8 +197,8 @@ class HTTPServer(object):
                                          ioloop.IOLoop.READ)
 
     def stop(self):
-      for s in self._socket:
-          self.io_loop.remove_handler(s.fileno())
+      for f,s in self._socket.items():
+          self.io_loop.remove_handler(f)
           s.close()
 
     def _handle_events(self, fd, events):
