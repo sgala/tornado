@@ -197,8 +197,8 @@ class HTTPServer(object):
                                          ioloop.IOLoop.READ)
 
     def stop(self):
-      for s in self._socket:
-          self.io_loop.remove_handler(s.fileno())
+      for f,s in self._socket.items():
+          self.io_loop.remove_handler(f)
           s.close()
 
     def _handle_events(self, fd, events):
