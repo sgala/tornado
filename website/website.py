@@ -46,17 +46,23 @@ class ContentHandler(tornado.web.RequestHandler):
 
 
 settings = {
+    "static_path": os.path.join(os.path.dirname(__file__), "static"),
     "template_path": os.path.join(os.path.dirname(__file__), "templates"),
     "xsrf_cookies": True,
     "debug": os.environ.get("SERVER_SOFTWARE", "").startswith("Development/"),
 }
-application = tornado.wsgi.WSGIApplication([
+application = tornado.web.Application([
     (r"/([a-z]*)", ContentHandler),
 ], **settings)
 
 
 def main():
-    wsgiref.handlers.CGIHandler().run(application)
+    # wsgiref.handlers.CGIHandler().run(application)
+    import tornado.httpserver, tornado.ioloop
+    http_server = tornado.httpserver.HTTPServer(application, xheaders=True)
+    http_server.listen(8888)
+    tornado.ioloop.IOLoop.instance().start()
+
 
 
 if __name__ == "__main__":
