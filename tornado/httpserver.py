@@ -18,7 +18,6 @@
 
 import cgi
 import errno
-import fcntl
 import functools
 import ioloop
 import iostream
@@ -27,6 +26,14 @@ import os
 import socket
 import time
 import urlparse
+
+try:
+    import fcntl
+except ImportError:
+    if os.name == 'nt':
+        import win32_support as fcntl
+    else:
+        raise
 
 try:
     import ssl # Python 2.6+

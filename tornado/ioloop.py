@@ -18,12 +18,19 @@
 
 import bisect
 import errno
-import fcntl
-import logging
 import os
+import logging
 import select
 import time
 
+try:
+    import fcntl
+except ImportError:
+    if os.name == 'nt':
+        import win32_support
+        import win32_support as fcntl
+    else:
+        raise
 
 _log = logging.getLogger("tornado.ioloop")
 
@@ -94,13 +101,17 @@ class IOLoop(object):
 
         # Create a pipe that we send bogus data to when we want to wake
         # the I/O loop when it is idle
-        r, w = os.pipe()
-        self._set_nonblocking(r)
-        self._set_nonblocking(w)
-        self._set_close_exec(r)
-        self._set_close_exec(w)
-        self._waker_reader = os.fdopen(r, "r", 0)
-        self._waker_writer = os.fdopen(w, "w", 0)
+        if os.name != 'nt':
+            r, w = os.pipe()
+            self._set_nonblocking(r)
+            self._set_nonblocking(w)
+            self._set_close_exec(r)
+            self._set_close_exec(w)
+            self._waker_reader = os.fdopen(r, "r", 0)
+            self._waker_writer = os.fdopen(w, "w", 0)
+        else:
+            self._waker_reader = self._waker_writer = win32_support.Pipe()
+            r = self._waker_writer.reader_fd
         self.add_handler(r, self._read_waker, self.READ)
 
     @classmethod
