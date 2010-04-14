@@ -120,10 +120,10 @@ class HTTPServer(object):
         self.io_loop = io_loop
         self.xheaders = xheaders
         self.ssl_options = ssl_options
-        self._socket = None
+        self._socket = {}
         self._started = False
 
-    def listen(self, port, address=""):
+    def listen(self, port, address=None):
         """Binds to the given port and starts the server in a single process.
 
         This method is a shortcut for:
@@ -135,7 +135,7 @@ class HTTPServer(object):
         self.bind(port, address)
         self.start(1)
 
-    def bind(self, port, address=""):
+    def bind(self, port, address=None):
         """Binds this server to the given port on the given IP address.
 
         To start the server, call start(). If you want to run this server
@@ -143,14 +143,20 @@ class HTTPServer(object):
         sequence of bind() and start() calls.
         """
         assert not self._socket
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-        flags = fcntl.fcntl(self._socket.fileno(), fcntl.F_GETFD)
-        flags |= fcntl.FD_CLOEXEC
-        fcntl.fcntl(self._socket.fileno(), fcntl.F_SETFD, flags)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._socket.setblocking(0)
-        self._socket.bind((address, port))
-        self._socket.listen(128)
+        ais = socket.getaddrinfo(address, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        for ai in ais:
+            s = socket.socket(*ai[:3])
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if s.family == socket.AF_INET6:
+                s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+            s.bind(ai[4])
+            f = s.fileno()
+            self._socket[f] = s
+            flags = fcntl.fcntl(f, fcntl.F_GETFD)
+            flags |= fcntl.FD_CLOEXEC
+            fcntl.fcntl(f, fcntl.F_SETFD, flags)
+            s.setblocking(0)
+            s.listen(128)
 
     def start(self, num_processes=None):
         """Starts this server in the IOLoop.
@@ -185,26 +191,28 @@ class HTTPServer(object):
             for i in range(num_processes):
                 if os.fork() == 0:
                     self.io_loop = ioloop.IOLoop.instance()
-                    self.io_loop.add_handler(
-                        self._socket.fileno(), self._handle_events,
-                        ioloop.IOLoop.READ)
+                    for f in self._socket:
+                        self.io_loop.add_handler(
+                            f, self._handle_events,
+                            ioloop.IOLoop.READ)
                     return
             os.waitpid(-1, 0)
         else:
             if not self.io_loop:
                 self.io_loop = ioloop.IOLoop.instance()
-            self.io_loop.add_handler(self._socket.fileno(),
-                                     self._handle_events,
-                                     ioloop.IOLoop.READ)
+            for f in self._socket:
+                self.io_loop.add_handler(f, self._handle_events,
+                                         ioloop.IOLoop.READ)
 
     def stop(self):
-      self.io_loop.remove_handler(self._socket.fileno())
-      self._socket.close()
+      for f,s in self._socket.items():
+          self.io_loop.remove_handler(f)
+          s.close()
 
     def _handle_events(self, fd, events):
         while True:
             try:
-                connection, address = self._socket.accept()
+                connection, address = self._socket[fd].accept()
             except socket.error, e:
                 if e[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
                     return
