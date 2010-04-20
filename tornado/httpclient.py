@@ -122,6 +122,7 @@ class AsyncHTTPClient(object):
             instance._events = {}
             instance._added_perform_callback = False
             instance._timeout = None
+            instance._closed = False
             cls._ASYNC_CLIENTS[io_loop] = instance
             return instance
 
@@ -135,6 +136,7 @@ class AsyncHTTPClient(object):
         for curl in self._curls:
             curl.close()
         self._multi.close()
+        self._closed = True
 
     def fetch(self, request, callback, **kwargs):
         """Executes an HTTPRequest, calling callback with an HTTPResponse.
@@ -164,6 +166,9 @@ class AsyncHTTPClient(object):
 
     def _perform(self):
         self._added_perform_callback = False
+
+        if self._closed:
+            return
 
         while True:
             while True:
@@ -433,7 +438,7 @@ def _curl_header_callback(headers, header_line):
         return
     if header_line == "\r\n":
         return
-    parts = header_line.split(": ")
+    parts = header_line.split(":", 1)
     if len(parts) != 2:
         _log.warning("Invalid HTTP response header line %r", header_line)
         return
